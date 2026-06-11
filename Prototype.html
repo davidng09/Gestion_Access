@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Omega Network Monitoring Dashboard</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#e5e2e2",
+                    "outline-variant": "#30363D",
+                    "on-error": "#690005",
+                    "tertiary": "#c6c6c6",
+                    "secondary": "#adc7ff",
+                    "on-secondary": "#002e68",
+                    "on-primary-container": "#797b83",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "surface-tint": "#c4c6cf",
+                    "outline": "#909095",
+                    "on-secondary-fixed": "#001a41",
+                    "on-primary-fixed": "#191c22",
+                    "on-primary-fixed-variant": "#44474e",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "surface-bright": "#3a3939",
+                    "surface-container-high": "#2a2a2a",
+                    "secondary-fixed": "#d8e2ff",
+                    "background": "#0B0E14",
+                    "error-container": "#93000a",
+                    "surface-container-lowest": "#0e0e0f",
+                    "on-surface": "#e5e2e2",
+                    "surface-container-highest": "#353435",
+                    "inverse-on-surface": "#313031",
+                    "inverse-surface": "#e5e2e2",
+                    "secondary-container": "#4a8eff",
+                    "surface": "#131314",
+                    "on-surface-variant": "#c6c6cb",
+                    "on-secondary-fixed-variant": "#004493",
+                    "on-secondary-container": "#00285b",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "secondary-fixed-dim": "#adc7ff",
+                    "tertiary-fixed": "#e2e2e2",
+                    "surface-dim": "#131314",
+                    "primary-fixed-dim": "#c4c6cf",
+                    "primary": "#c4c6cf",
+                    "primary-fixed": "#e1e2eb",
+                    "primary-container": "#0b0e14",
+                    "on-tertiary-container": "#7b7b7b",
+                    "on-primary": "#2e3037",
+                    "surface-container": "#201f20",
+                    "on-tertiary": "#303030",
+                    "inverse-primary": "#5c5e66",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#353435",
+                    "surface-container-low": "#1c1b1c",
+                    "tertiary-container": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-sm": "8px",
+                    "gutter-md": "12px",
+                    "margin-mobile": "16px",
+                    "stack-md": "16px",
+                    "sidebar-width": "72px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "data-mono": ["13px", {"lineHeight": "18px", "letterSpacing": "-0.02em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #0B0E14; color: #e5e2e2; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-glow {
+            box-shadow: 0 0 15px rgba(74, 142, 255, 0.2);
+        }
+        .omega-glow {
+            filter: drop-shadow(0 0 8px rgba(74, 142, 255, 0.8));
+        }
+        /* Custom scrollbar for technical logs */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 10px; }
+        
+        .fade-in-entry {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-body-md overflow-hidden">
+<!-- Navigation Drawer (Fixed Sidebar) -->
+<nav class="fixed left-0 top-0 h-full w-sidebar-width z-50 flex flex-col bg-background border-r border-outline-variant">
+<!-- Brand Identity Container -->
+<div class="h-[72px] w-[72px] flex items-center justify-center bg-black border-b border-outline-variant">
+<img alt="Omega Symbol" class="w-10 h-10 omega-glow" data-alt="A stylized glowing red and blue neon omega symbol set against a deep obsidian background, representing a high-tech network monitoring brand. The symbol is sharp with subtle light bleed that suggests a futuristic command center aesthetic. The lighting is focused and dramatic, highlighting the clean digital edges of the icon." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDING_CMkLXHVG82mJL6YH0ge9KUKvHOSD5iP6c7C5L8UKWw63YnPZ2cN9CazMeax6tD3n7VTLaYUfAqVZvEB0N2rzbG-UyGofdGcX629v9EwtIKemWtskuCnxTMjD3VSSR-yVgL7VYQ6QY9Aelfiut_8F5ROJbkrv5xqcN0VMOWCwywDoX7m8MUkGc07Ej9cEPsNZa5n6_zwt8-HDygI2-ULL8qPkLgtyY6YjgC1UQbdOu-tWHLyjAu1lPbdsvYI"/>
+</div>
+<div class="flex flex-col items-center py-stack-md gap-stack-md flex-grow">
+<!-- Navigation Items Mapping from JSON Logic -->
+<button class="flex flex-col items-center gap-1 group bg-secondary-container/20 text-secondary border-l-2 border-secondary w-full py-2 active:scale-95 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-label-caps text-[10px] uppercase">Dash</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-outline hover:text-on-surface-variant transition-all py-2 w-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">router</span>
+<span class="font-label-caps text-[10px] uppercase">Wifi</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-outline hover:text-on-surface-variant transition-all py-2 w-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">pause</span>
+<span class="font-label-caps text-[10px] uppercase">Health</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-outline hover:text-on-surface-variant transition-all py-2 w-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-label-caps text-[10px] uppercase">Logs</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-outline hover:text-on-surface-variant transition-all py-2 w-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">science</span>
+<span class="font-label-caps text-[10px] uppercase">Sims</span>
+</button>
+<button class="flex flex-col items-center gap-1 group text-outline hover:text-on-surface-variant transition-all py-2 w-full mt-auto active:scale-95 duration-150">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-[10px] uppercase">Admin</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-sidebar-width h-screen overflow-y-auto flex flex-col bg-background pb-10">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full h-14 pl-margin-mobile pr-margin-mobile sticky top-0 bg-surface-dim/80 backdrop-blur-md z-40 border-b border-outline-variant">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-on-surface-variant">menu</span>
+<h1 class="font-headline-md text-on-surface ml-2">Monitor_Ω</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col items-end hidden sm:flex">
+<span class="font-label-caps text-on-surface">Natali Peresta</span>
+<span class="text-[10px] text-secondary font-bold tracking-widest uppercase">Admin Level 4</span>
+</div>
+<div class="w-8 h-8 rounded-full border border-secondary p-[2px] cursor-pointer hover:opacity-80 transition-opacity">
+<img alt="Avatar" class="w-full h-full rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEYXMs3AlJZRjZk6fGPHeH90ss2quvffDsRqJPDu4ulrzdk1YkjedFe8fE2LH1vMY809Ld1owGYf4cj1LqNkAZ8KJ_HDAVWg6GKu3ZzqnSCPapboI_hP3rkxxxz_8uxhyV3A4noN_sAOX7HVyLr9MJn9QANEAxU0zZIpjhMbb8fhlWV-XnGhyKYF3DDXM4BrJOT6JQUWHQZrFhhFiRx4X6HfSFY46FfNmS4y4dP6IOVbqUzQtFI6zE7eAvFqNaEpSgVht4qtmb2BQ"/>
+</div>
+</div>
+</header>
+<div class="p-margin-mobile flex flex-col gap-6 max-w-7xl mx-auto w-full">
+<!-- Academic Context Banner -->
+<section class="bg-primary-container/30 border border-outline-variant p-4 rounded-xl flex flex-col gap-2 relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary animate-pulse">info</span>
+<h2 class="font-body-md font-semibold text-on-surface">Sujet : Système de surveillance de réseau avec tableau de bord</h2>
+</div>
+<span class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-bold rounded-lg border border-green-500/30">ACCEPTÉ</span>
+</div>
+<p class="text-on-primary-container text-body-sm leading-relaxed max-w-3xl">
+<span class="text-secondary font-bold uppercase text-[10px] mr-1">Objectif Principal :</span> 
+                    Permettre à un administrateur de surveiller en temps réel les performances d'un réseau via un tableau de bord simple et interactif.
+                </p>
+<!-- Decorative scan line -->
+<div class="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-secondary to-transparent opacity-20"></div>
+</section>
+<!-- Grid Layout for Dashboard Components -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Network Overview Section -->
+<div class="md:col-span-3">
+<div class="flex items-center gap-2 mb-4">
+<div class="w-1 h-4 bg-secondary"></div>
+<h3 class="font-headline-md text-on-surface">Network Overview</h3>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<!-- Card 1: Online Status -->
+<div class="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-on-surface-variant font-label-caps text-[10px] uppercase">1. Network Status</span>
+<span class="material-symbols-outlined text-secondary opacity-50">router</span>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-3xl font-data-mono text-green-400">Online</span>
+<div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+</div>
+<p class="text-[10px] text-outline">All systems operational</p>
+</div>
+<!-- Card 2: Active Users -->
+<div class="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-on-surface-variant font-label-caps text-[10px] uppercase">2. Devices</span>
+<span class="material-symbols-outlined text-secondary opacity-50">devices</span>
+</div>
+<div class="flex items-end gap-2 mt-2">
+<span class="text-3xl font-data-mono text-on-surface" id="active-users-count">42</span>
+<span class="text-sm font-body-sm text-on-surface-variant mb-1">Active Users</span>
+</div>
+<p class="text-[10px] text-outline">e.g. 28 laptops, 14 mobile</p>
+</div>
+<!-- Card 3: Traffic -->
+<div class="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-on-surface-variant font-label-caps text-[10px] uppercase">3. Traffic</span>
+<span class="material-symbols-outlined text-secondary opacity-50">bar_chart</span>
+</div>
+<div class="flex items-end gap-2 mt-2">
+<span class="text-3xl font-data-mono text-on-surface" id="traffic-value">850</span>
+<span class="text-sm font-body-sm text-secondary mb-1">Mbps</span>
+</div>
+<div class="flex gap-4 text-[10px]">
+<span class="text-green-400">↑ Up: 212 Mbps</span>
+<span class="text-error">↓ Down: 638 Mbps</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Wi-Fi Access Management Table -->
+<div class="md:col-span-2 flex flex-col gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-body-md font-bold">Wi-Fi Access Management</h3>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2 top-1.5 text-outline text-sm">search</span>
+<input class="bg-background border border-outline-variant text-[10px] rounded pl-8 pr-2 py-1.5 focus:border-secondary outline-none w-32" placeholder="Search a..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container/50 text-[10px] text-outline uppercase font-label-caps">
+<tr>
+<th class="px-4 py-3 font-normal">Type</th>
+<th class="px-4 py-3 font-normal">Host Name</th>
+<th class="px-4 py-3 font-normal">IP Address</th>
+<th class="px-4 py-3 font-normal">MAC Address</th>
+<th class="px-4 py-3 font-normal">Signal</th>
+<th class="px-4 py-3 font-normal">Status</th>
+<th class="px-4 py-3 font-normal text-right">Action</th>
+</tr>
+</thead>
+<tbody class="text-body-sm divide-y divide-outline-variant" id="device-table-body">
+<!-- Dynamic rows -->
+<tr class="hover:bg-surface-container-high/20 transition-colors">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-outline">desktop_windows</span></td>
+<td class="px-4 py-3 font-semibold">AP_Library</td>
+<td class="px-4 py-3 font-data-mono text-secondary">19.188.10.2</td>
+<td class="px-4 py-3 font-data-mono">08:05:A5:85:59</td>
+<td class="px-4 py-3"><span class="material-symbols-outlined text-green-400">signal_cellular_4_bar</span></td>
+<td class="px-4 py-3">
+<span class="status-badge px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] border border-green-500/20">Authorized</span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleDevice(this, 'AP_Library')" type="checkbox"/>
+<div class="w-7 h-4 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+<button class="text-[10px] text-error hover:bg-error/10 px-2 py-1 rounded transition-colors uppercase font-bold border border-error/20" onclick="blockDevice('AP_Library', this)">Block</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-high/20 transition-colors">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-outline">laptop</span></td>
+<td class="px-4 py-3 font-semibold">Laptop_3</td>
+<td class="px-4 py-3 font-data-mono text-secondary">19.188.10.22</td>
+<td class="px-4 py-3 font-data-mono">08:08-A8-09:38</td>
+<td class="px-4 py-3"><span class="material-symbols-outlined text-green-400">signal_cellular_4_bar</span></td>
+<td class="px-4 py-3">
+<span class="status-badge px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] border border-green-500/20">Authorized</span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleDevice(this, 'Laptop_3')" type="checkbox"/>
+<div class="w-7 h-4 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+<button class="text-[10px] text-error hover:bg-error/10 px-2 py-1 rounded transition-colors uppercase font-bold border border-error/20" onclick="blockDevice('Laptop_3', this)">Block</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-high/20 transition-colors">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-outline">smartphone</span></td>
+<td class="px-4 py-3 font-semibold">Laptop_Sara</td>
+<td class="px-4 py-3 font-data-mono text-secondary">19.188.10.3</td>
+<td class="px-4 py-3 font-data-mono">05:05-AF-A7:77</td>
+<td class="px-4 py-3"><span class="material-symbols-outlined text-on-surface-variant">signal_cellular_3_bar</span></td>
+<td class="px-4 py-3">
+<span class="status-badge px-2 py-0.5 rounded bg-secondary/10 text-secondary text-[10px] border border-secondary/20">Guest</span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleDevice(this, 'Laptop_Sara')" type="checkbox"/>
+<div class="w-7 h-4 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+<button class="text-[10px] text-error hover:bg-error/10 px-2 py-1 rounded transition-colors uppercase font-bold border border-error/20" onclick="blockDevice('Laptop_Sara', this)">Block</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Simulation Control Panel -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary">science</span>
+<h3 class="font-body-md font-bold">Simulation Control Panel</h3>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="bg-secondary text-on-secondary px-4 py-2 rounded-lg font-label-caps flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all" onclick="simulateTraffic()">
+<span class="material-symbols-outlined text-sm">bolt</span>
+                                Trigger Traffic Spike
+                            </button>
+<button class="bg-error-container text-on-error-container border border-error px-4 py-2 rounded-lg font-label-caps flex items-center gap-2 hover:bg-error-container/80 active:scale-95 transition-all" onclick="simulateIntrusion()">
+<span class="material-symbols-outlined text-sm">gpp_maybe</span>
+                                Simulate Intrusion
+                            </button>
+</div>
+</div>
+</div>
+<!-- Live Activity & Alerts Timeline -->
+<div class="md:col-span-1">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col h-full overflow-hidden">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-body-md font-bold">Live Activity Logs</h3>
+<span class="material-symbols-outlined text-outline">more_horiz</span>
+</div>
+<div class="p-4 flex flex-col gap-4 overflow-y-auto max-h-[600px] flex-grow" id="timeline-container">
+<!-- Log Entry -->
+<div class="flex gap-3 relative before:absolute before:left-[7px] before:top-4 before:bottom-0 before:w-[1px] before:bg-outline-variant last:before:hidden fade-in-entry">
+<div class="w-4 h-4 rounded-full bg-green-500 border-2 border-background z-10"></div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-on-surface text-xs font-data-mono">10:49:15</span>
+<span class="text-on-surface-variant text-[10px]">- New connection</span>
+</div>
+<p class="text-[10px] text-secondary font-semibold">AP_Library; Laptop_Sarah</p>
+<span class="text-[8px] text-outline mt-1 italic">Recent commiserated 1s ago</span>
+</div>
+</div>
+<!-- Log Entry -->
+<div class="flex gap-3 relative before:absolute before:left-[7px] before:top-4 before:bottom-0 before:w-[1px] before:bg-outline-variant last:before:hidden fade-in-entry">
+<div class="w-4 h-4 rounded-full bg-error border-2 border-background z-10"></div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-on-surface text-xs font-data-mono">10:47:30</span>
+<span class="text-on-surface-variant text-[10px]">- Blocked access</span>
+</div>
+<p class="text-[10px] text-error font-semibold">Unauthorized Device Detected</p>
+<span class="text-[8px] text-outline mt-1 italic">Recent commiserated 1m ago</span>
+</div>
+</div>
+<!-- Log Entry -->
+<div class="flex gap-3 relative before:absolute before:left-[7px] before:top-4 before:bottom-0 before:w-[1px] before:bg-outline-variant last:before:hidden fade-in-entry">
+<div class="w-4 h-4 rounded-full bg-secondary border-2 border-background z-10"></div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-on-surface text-xs font-data-mono">10:45:00</span>
+<span class="text-on-surface-variant text-[10px]">- Peak Traffic Detected</span>
+</div>
+<p class="text-[10px] text-on-surface font-semibold">Internal Transfer Peak reached 950 Mbps</p>
+<span class="text-[8px] text-outline mt-1 italic">System Auto-Logged</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Custom Notification Toast Container -->
+<div class="fixed bottom-6 right-6 z-[60] flex flex-col gap-2" id="toast-container"></div>
+<script>
+        let userCount = 42;
+        const timeline = document.getElementById('timeline-container');
+        const countDisplay = document.getElementById('active-users-count');
+
+        function addLogEntry(time, type, text, colorClass = 'bg-green-500') {
+            const entry = document.createElement('div');
+            entry.className = "flex gap-3 relative before:absolute before:left-[7px] before:top-4 before:bottom-0 before:w-[1px] before:bg-outline-variant last:before:hidden fade-in-entry";
+            entry.innerHTML = `
+                <div class="w-4 h-4 rounded-full ${colorClass} border-2 border-background z-10"></div>
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                        <span class="text-on-surface text-xs font-data-mono">${time}</span>
+                        <span class="text-on-surface-variant text-[10px]">- ${type}</span>
+                    </div>
+                    <p class="text-[10px] text-on-surface font-semibold">${text}</p>
+                    <span class="text-[8px] text-outline mt-1 italic">Real-time update</span>
+                </div>
+            `;
+            timeline.prepend(entry);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const color = type === 'error' ? 'bg-error-container border-error' : 'bg-surface-container-high border-secondary';
+            toast.className = `${color} border p-3 rounded-lg shadow-2xl flex items-center gap-3 fade-in-entry min-w-[200px]`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined text-sm ${type === 'error' ? 'text-error' : 'text-secondary'}">
+                    ${type === 'error' ? 'report' : 'check_circle'}
+                </span>
+                <span class="text-xs font-bold">${message}</span>
+            `;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function toggleDevice(checkbox, hostname) {
+            const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const row = checkbox.closest('tr');
+            const badge = row.querySelector('.status-badge');
+
+            if (checkbox.checked) {
+                userCount++;
+                badge.className = "status-badge px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] border border-green-500/20";
+                badge.innerText = "Authorized";
+                addLogEntry(now, "Status Reconnected", `${hostname} returned to online status`, 'bg-green-500');
+                showToast(`${hostname} Reconnected`);
+            } else {
+                userCount--;
+                badge.className = "status-badge px-2 py-0.5 rounded bg-outline-variant/30 text-outline text-[10px] border border-outline-variant";
+                badge.innerText = "Inactive";
+                addLogEntry(now, "Status Offline", `${hostname} session terminated`, 'bg-outline');
+                showToast(`${hostname} Offline`);
+            }
+            countDisplay.innerText = userCount;
+        }
+
+        function blockDevice(hostname, btn) {
+            const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const row = btn.closest('tr');
+            const badge = row.querySelector('.status-badge');
+            const checkbox = row.querySelector('input[type="checkbox"]');
+
+            if (checkbox.checked) userCount--;
+            checkbox.checked = false;
+            
+            badge.className = "status-badge px-2 py-0.5 rounded bg-error/10 text-error text-[10px] border border-error/20";
+            badge.innerText = "Blocked";
+            
+            addLogEntry(now, "Security Block", `Manual override: ${hostname} blacklisted`, 'bg-error');
+            countDisplay.innerText = userCount;
+            showToast(`Security Protocol: ${hostname} Blocked`, 'error');
+        }
+
+        function simulateTraffic() {
+            const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const trafficDisplay = document.getElementById('traffic-value');
+            
+            // Visual surge
+            trafficDisplay.classList.add('text-secondary', 'scale-110', 'transition-transform');
+            trafficDisplay.innerText = "1.2k";
+            
+            addLogEntry(now, "Simulation", "Traffic spike simulation triggered: 1.2 Gbps peak", "bg-secondary");
+            showToast("Traffic Spike Initiated");
+
+            setTimeout(() => {
+                trafficDisplay.innerText = "850";
+                trafficDisplay.classList.remove('scale-110');
+            }, 3000);
+        }
+
+        function simulateIntrusion() {
+            const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            addLogEntry(now, "ALERT", "Brute-force attempt detected from unknown IP (10.0.0.122)", "bg-error");
+            showToast("Intrusion Warning: Check Logs", 'error');
+            
+            // Atmospheric flicker effect
+            document.body.classList.add('opacity-80');
+            setTimeout(() => document.body.classList.remove('opacity-80'), 100);
+        }
+    </script>
+</body></html>

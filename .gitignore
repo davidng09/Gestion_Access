@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# PHP / logs
+*.log
+/vendor/
+
+# Environnement local (ne jamais versionner les secrets)
+.env
+.env.local
+config/database.local.php
+
+# Fichiers temporaires
+*.tmp
+*.bak
