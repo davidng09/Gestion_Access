@@ -3,7 +3,7 @@
 **Sujet L3 :** Système de surveillance de réseau avec tableau de bord  
 **Objectif :** Permettre à un administrateur de surveiller en temps réel les performances d'un réseau via un tableau de bord simple et interactif.
 
-Application web **HTML / CSS / JavaScript** (front) + **PHP / MySQL** (back), avec utilisateurs et scénarios **simulés**. Le design reprend le prototype [`Prototype.html`](Prototype.html) (thème sombre, sidebar, cartes métriques, tableau Wi-Fi, timeline, simulations).
+Application web **HTML / CSS / JavaScript** (front) + **PHP / MySQL** (back), alimentée par l'**agent Android** (hotspot Termux) pour la collecte réelle des appareils Wi-Fi.
 
 ---
 
@@ -64,6 +64,14 @@ C:\xampp\mysql\bin\mysql.exe -u root < database/schema.sql
 C:\xampp\mysql\bin\mysql.exe -u root < database/seed.sql
 ```
 
+**Option D — Base existante (migration agent Android)**
+
+Si la base est déjà créée, exécutez en plus :
+
+```bash
+C:\xampp\mysql\bin\mysql.exe -u root gestion_access < database/migration_phone_agent.sql
+```
+
 ### 4. Configuration base de données
 
 Fichier [`config/database.php`](config/database.php) — valeurs par défaut XAMPP :
@@ -77,7 +85,19 @@ Fichier [`config/database.php`](config/database.php) — valeurs par défaut XAM
 
 Modifiez ce fichier si votre installation MySQL utilise un autre mot de passe.
 
-### 5. Accéder à l'application
+### 5. Configuration agent Android (optionnel)
+
+Fichier [`config/agent.php`](config/agent.php) — valeurs par défaut :
+
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| `api_key` | `gestion-access-dev-key-change-me` | Clé partagée PC ↔ téléphone |
+| `hotspot_subnet` | `192.168.43.0/24` | Sous-réseau hotspot autorisé (`*` = tout) |
+| `device_stale_seconds` | `30` | Délai avant marquer un appareil réel hors ligne |
+
+Pour la production, copiez [`config/agent.local.php.example`](config/agent.local.php.example) vers `config/agent.local.php` et changez la clé API.
+
+### 6. Accéder à l'application
 
 | Page | URL |
 |------|-----|
@@ -90,7 +110,66 @@ Modifiez ce fichier si votre installation MySQL utilise un autre mot de passe.
 
 | Identifiant | Mot de passe | Profil |
 |-------------|--------------|--------|
-| `admin` | `admin123` | Natali Peresta — Admin Level 4 |
+| `jeremie` | `admin123` | Jeremie BOKOTA — Administrateur Niveau 4 |
+
+Créer/réinitialiser l'admin : `php database/create_admin.php`
+
+---
+
+## Intégration Android Hotspot (données réelles)
+
+### Schéma réseau
+
+```
+[Téléphone Android — hotspot 4G]
+        │
+        ├── PC (dashboard PHP/MySQL)  →  http://IP_PC:8080
+        └── Clients Wi-Fi détectés via ARP
+```
+
+1. Le téléphone active le **hotspot Wi-Fi**
+2. Le PC se connecte au Wi-Fi du téléphone
+3. L'agent Termux (`agent-android/`) envoie les clients au PC
+4. L'admin bloque/débloque depuis le dashboard ; l'agent exécute les actions
+
+### Lancement serveur (PC sur hotspot)
+
+```bash
+php -S 0.0.0.0:8080 -t "C:\chemin\vers\Gestion_Access"
+```
+
+Utilisez `0.0.0.0` (pas `localhost`) pour accepter les connexions depuis le téléphone.
+
+### Agent Termux
+
+Voir le guide détaillé : [`agent-android/README.md`](agent-android/README.md)
+
+```bash
+pkg install python
+pip install -r requirements.txt
+cp config.example.ini config.ini
+# Éditer pc_url (IP du PC) et api_key
+python collector.py        # session 1
+python action_listener.py  # session 2
+```
+
+### Test rapide sans téléphone (curl)
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/collector.php ^
+  -H "Content-Type: application/json" ^
+  -H "X-API-Key: gestion-access-dev-key-change-me" ^
+  -d "{\"clients\":[{\"ip\":\"192.168.43.50\",\"mac\":\"AA:BB:CC:DD:EE:01\",\"hostname\":\"Test_PC\"}]}"
+```
+
+L'appareil apparaît dans le tableau Wi-Fi avec le badge **Réel**. La carte **Agent Android** sur l'accueil affiche l'état de connexion.
+
+### Blocage sans root vs avec root
+
+| Mode | Comportement |
+|------|--------------|
+| Sans root (défaut) | Statut bloqué en BDD + log agent ; suffisant pour la soutenance |
+| Avec root (option) | Règle `iptables` en plus via `block_root.py` |
 
 ---
 
@@ -104,7 +183,13 @@ Gestion_Access/
 ├── Prototype.html            # Référence design (statique)
 ├── README.md                 # Ce fichier
 ├── config/
-│   └── database.php          # Connexion PDO MySQL
+│   ├── database.php          # Connexion PDO MySQL
+│   ├── agent.php             # Config agent Android (clé API, sous-réseau)
+│   └── agent.local.php.example
+├── agent-android/            # Scripts Termux (collector, action_listener)
+│   ├── collector.py
+│   ├── action_listener.py
+│   └── README.md
 ├── includes/
 │   ├── session.php           # Gestion sessions PHP
 │   ├── auth_guard.php        # Redirection si non connecté
@@ -112,13 +197,16 @@ Gestion_Access/
 │   └── partials/             # Composants HTML réutilisables
 ├── api/
 │   ├── auth.php              # Authentification JSON
-│   ├── devices.php           # Liste / toggle / block appareils
+│   ├── devices.php           # Liste / toggle / block / unblock appareils
 │   ├── metrics.php           # Métriques réseau
 │   ├── logs.php              # Timeline d'activité
-│   └── simulate.php          # Simulations trafic / intrusion
+│   ├── collector.php         # Ingestion clients depuis Android (X-API-Key)
+│   ├── phone_actions.php     # File block/unblock pour l'agent
+│   └── agent.php             # Statut heartbeat agent (session admin)
 ├── database/
 │   ├── schema.sql            # Structure des tables
 │   ├── seed.sql              # Données initiales
+│   ├── migration_phone_agent.sql  # Migration bases existantes
 │   └── install.php           # Script d'installation CLI
 └── assets/
     ├── css/dashboard.css     # Styles custom (animations, scrollbar)
@@ -147,7 +235,7 @@ flowchart TB
         devices[api/devices.php]
         metrics[api/metrics.php]
         logs[api/logs.php]
-        simulate[api/simulate.php]
+        collector[api/collector.php]
         helpers[includes/helpers.php]
     end
     subgraph data [MySQL gestion_access]
@@ -161,11 +249,11 @@ flowchart TB
     js -->|fetch JSON| devices
     js --> metrics
     js --> logs
-    js --> simulate
+    js --> collector
     devices --> helpers
     metrics --> helpers
     logs --> helpers
-    simulate --> helpers
+    collector --> helpers
     helpers --> tbl_devices
     helpers --> tbl_metrics
     helpers --> tbl_logs
@@ -183,10 +271,11 @@ flowchart TB
 | Table | Description |
 |-------|-------------|
 | `admins` | Administrateurs simulés |
-| `devices` | Appareils Wi-Fi simulés |
+| `devices` | Appareils Wi-Fi détectés par l'agent (`data_source`: real) |
 | `network_metrics` | État global du réseau (1 ligne, `id = 1`) |
 | `activity_logs` | Journal chronologique (timeline) |
-| `traffic_history` | Historique des pics de trafic |
+| `phone_actions_queue` | File d'actions block/unblock pour l'agent Android |
+| `agent_heartbeats` | Dernier signal de l'agent collector |
 
 ### Relations
 
@@ -196,86 +285,31 @@ flowchart TB
 
 **devices.status** : `authorized` | `inactive` | `blocked` | `guest`  
 **devices.device_type** : `laptop` | `mobile` | `desktop` | `unknown`  
-**activity_logs.severity** : `info` | `warning` | `error`  
-**network_metrics.network_status** : `online` | `degraded` | `offline`
+**devices.data_source** : `real` (appareils issus du collector Android)  
 
 ### Données initiales (seed)
 
-**Appareils :**
-
-| Hostname | Type | IP | Statut |
-|----------|------|-----|--------|
-| AP_Library | desktop | 19.188.10.2 | authorized |
-| Laptop_3 | laptop | 19.188.10.22 | authorized |
-| Laptop_Sara | mobile | 19.188.10.3 | guest |
-| Laptop_Marc | laptop | 19.188.10.15 | authorized |
-| Phone_Julie | mobile | 19.188.10.28 | authorized |
-
-**Métriques :** réseau Online, trafic 850 Mbps (up 212 / down 638).
+- Admin `jeremie` / `admin123`
+- Aucun appareil préchargé — les clients apparaissent via l'agent Android ou `POST /api/collector.php`
+- Métriques réseau à zéro jusqu'à la première collecte
 
 ---
 
 ## API REST (JSON)
 
-Toutes les routes (sauf login) exigent une **session PHP** active. Sinon : HTTP `401` + `{"error":"Non authentifié"}`.
-
-### `POST api/auth.php?action=login`
-
-**Corps :**
-```json
-{ "username": "admin", "password": "admin123" }
-```
-
-**Réponse 200 :**
-```json
-{
-  "success": true,
-  "admin": {
-    "id": 1,
-    "username": "admin",
-    "full_name": "Natali Peresta",
-    "role_level": "Admin Level 4",
-    "avatar_url": "..."
-  }
-}
-```
-
-**Réponse 401 :** `{"error":"Identifiants invalides"}`
-
-### `GET api/devices.php`
-
-Retourne la liste des appareils.
-
-### `PATCH api/devices.php?id={id}`
-
-**Toggle ON :**
-```json
-{ "is_online": true }
-```
-
-**Toggle OFF :**
-```json
-{ "is_online": false }
-```
-
-**Bloquer :**
-```json
-{ "action": "block" }
-```
-
-**Réponse :** `{"success":true,"device":{...}}`
+Toutes les routes admin exigent une **session PHP** active. Les routes agent (`collector.php`, `phone_actions.php`) utilisent `X-API-Key`.
 
 ### `GET api/metrics.php`
 
 ```json
 {
   "network_status": "online",
-  "active_users": 5,
-  "laptops_count": 2,
-  "mobile_count": 2,
-  "traffic_mbps": 850,
-  "traffic_up_mbps": 212,
-  "traffic_down_mbps": 638,
+  "active_users": 0,
+  "laptops_count": 0,
+  "mobile_count": 0,
+  "traffic_mbps": 0,
+  "traffic_up_mbps": 0,
+  "traffic_down_mbps": 0,
   "alert_active": false
 }
 ```
@@ -284,61 +318,43 @@ Retourne la liste des appareils.
 
 Tableau d'entrées `{ id, event_time, event_type, message, severity, device_id }`.
 
-### `POST api/simulate.php`
-
-**Pic de trafic :**
-```json
-{ "type": "traffic" }
-```
-
-**Intrusion :**
-```json
-{ "type": "intrusion" }
-```
-
-**Réinitialiser trafic :**
-```json
-{ "type": "reset_traffic", "value": 850 }
-```
-
 ---
 
-## Use cases simulés
+## Cas d'usage
 
 | ID | Scénario | Étapes | Résultat attendu |
 |----|----------|--------|------------------|
-| UC-01 | Connexion admin | `login.php` → admin / admin123 | Session créée, redirect dashboard |
+| UC-01 | Connexion admin | `login.php` → jeremie / admin123 | Session créée, redirect dashboard |
 | UC-02 | Chargement dashboard | Ouvrir `index.php` | Cartes, tableau et logs chargés depuis l'API |
-| UC-03 | Désactiver appareil | Toggle OFF sur Laptop_3 | `status=inactive`, compteur -1, log timeline |
-| UC-04 | Réactiver appareil | Toggle ON | `status=authorized`, compteur +1, log |
-| UC-05 | Bloquer accès | Clic Block sur Laptop_Sara | `status=blocked`, log error, toast rouge |
-| UC-06 | Recherche | Saisir « Library » dans Search | Filtre le tableau (client) |
-| UC-07 | Pic de trafic | Trigger Traffic Spike | Trafic 1.2k, log, retour 850 après 3 s |
-| UC-08 | Intrusion Wi-Fi | Simulate Intrusion | `alert_active=1`, device Unknown, log ALERT |
-| UC-09 | Déconnexion | Admin → Déconnexion | Redirect login, `index.php` inaccessible |
+| UC-03 | Collecte réelle | POST `collector.php` depuis agent/curl | Appareil badge **Réel**, carte agent connectée |
+| UC-04 | Désactiver appareil | Toggle OFF sur un client | Compteur -1, log timeline |
+| UC-05 | Bloquer accès | Clic Bloquer | `status=blocked`, file d'actions, log sécurité |
+| UC-06 | Débloquer appareil | Clic Débloquer | `status=authorized`, file unblock |
+| UC-07 | Recherche | Saisir IP ou MAC dans Search | Filtre le tableau (client) |
+| UC-08 | Déconnexion | Admin → Déconnexion | Redirect login, `index.php` inaccessible |
 
 ---
 
 ## Fonctionnalités front
 
-- **SPA** : 6 vues via la sidebar (Dash, Wifi, Health, Logs, Sims, Admin)
-- **Tableau Wi-Fi** : toggle, block, badges colorés (vert / gris / rouge / orange)
+- **SPA** : 5 vues via la sidebar (Accueil, Wi-Fi, Santé, Journaux, Admin)
+- **Tableau Wi-Fi** : toggle, block, débloquer, badge **Réel**
 - **Recherche** : filtre hostname, IP, MAC
 - **Timeline** : logs en temps réel, polling toutes les 3 secondes
-- **Simulations** : pic trafic + intrusion avec toasts et bannière d'alerte
+- **Agent Android** : carte de statut sur l'accueil
 - **Persistance** : toutes les actions survivent au rechargement (F5)
 
 ---
 
 ## Guide de démo (soutenance)
 
-1. Ouvrir `login.php` — se connecter (`admin` / `admin123`)
-2. **Dashboard** — présenter la bannière académique et les 3 cartes Network Overview
-3. **Wi-Fi** — montrer le tableau, rechercher « Library »
-4. **Toggle** — désactiver Laptop_3 (compteur et log mis à jour)
-5. **Block** — bloquer Laptop_Sara (badge rouge, log sécurité)
-6. **Simulations** — déclencher Traffic Spike puis Simulate Intrusion
-7. **F5** — vérifier que les changements sont persistés en base
+1. Ouvrir `login.php` — se connecter (`jeremie` / `admin123`)
+2. **Accueil** — présenter les cartes réseau et la carte **Agent Android**
+3. **Wi-Fi** — montrer le tableau et les badges **Réel**
+4. **Collecte** — lancer l'agent Termux ou le test curl ; vérifier l'apparition des clients
+5. **Toggle** — désactiver un appareil (compteur et log mis à jour)
+6. **Block / Débloquer** — bloquer puis débloquer un appareil (file d'actions côté agent)
+7. **F5** — vérifier la persistance en base
 8. **Admin** — déconnexion
 
 ---
@@ -348,12 +364,11 @@ Tableau d'entrées `{ id, event_time, event_type, message, severity, device_id }
 | Test | Action | Attendu |
 |------|--------|---------|
 | T1 | F5 après Block | Appareil reste `blocked` |
-| T2 | Toggle plusieurs appareils OFF | Compteur cohérent avec BDD |
-| T3 | Simulation trafic | Affichage 1.2k puis retour 850 |
-| T4 | Simulation intrusion | Bannière alerte + log ALERT |
-| T5 | Accès `index.php` sans login | Redirect vers `login.php` |
-| T6 | Appel API sans session | HTTP 401 JSON |
-| T7 | Recherche « Sara » | Une ligne visible |
+| T2 | Toggle appareil OFF/ON | Compteur cohérent avec BDD |
+| T3 | Accès `index.php` sans login | Redirect vers `login.php` |
+| T4 | Appel API admin sans session | HTTP 401 JSON |
+| T5 | POST collector.php (curl) | Appareil `data_source=real` en BDD |
+| T6 | Block appareil réel | Entrée `pending` dans `phone_actions_queue` |
 
 **Test connexion BDD (CLI) :**
 
@@ -361,7 +376,7 @@ Tableau d'entrées `{ id, event_time, event_type, message, severity, device_id }
 php database/test_connection.php
 ```
 
-Attendu : `auth_ok=yes` et `devices=5`.
+Attendu : `auth_ok=yes` et `devices=0` (jusqu'à collecte agent).
 
 ---
 
@@ -376,18 +391,20 @@ Attendu : `auth_ok=yes` et `devices=5`.
 | Modules JS ne chargent pas | Utiliser Apache (`localhost/...`), pas `file://` |
 | `CORS` / fetch échoue | Servir le projet via `http://localhost/Gestion_Access/` |
 | Mot de passe MySQL non vide | Modifier `config/database.php` |
+| MySQL arrêté (ERROR 2002) | Démarrer MySQL dans le panneau XAMPP |
+| Agent 403 IP non autorisée | Ajuster `hotspot_subnet` ou `*` dans `config/agent.local.php` |
+| Agent 401 | Aligner `api_key` entre `config/agent.php` et `agent-android/config.ini` |
 
 ---
 
 ## Évolutions possibles (hors scope)
 
 - Graphique Chart.js + `traffic_history`
-- Script cron `simulate_events.php` (événements aléatoires)
 - Export CSV des logs
-- Intégration SNMP / données réseau réelles
+- Intégration SNMP / Prometheus réels
 
 ---
 
 ## Licence / contexte académique
 
-Projet réalisé dans le cadre d'un module L3 — gestion et surveillance d'accès réseau. Les utilisateurs, appareils et événements sont **simulés** à des fins de démonstration.
+Projet réalisé dans le cadre d'un module L3 — gestion et surveillance d'accès réseau via hotspot Android et collecte réelle des clients Wi-Fi.

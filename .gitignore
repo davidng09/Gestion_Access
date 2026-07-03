@@ -17,6 +17,7 @@ desktop.ini
 .env
 .env.local
 config/database.local.php
+config/agent.local.php
 
 # Fichiers temporaires
 *.tmp

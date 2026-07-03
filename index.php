@@ -7,7 +7,6 @@ require_once __DIR__ . '/includes/auth_guard.php';
 $adminName = htmlspecialchars($currentAdmin['full_name'] ?? 'Administrateur', ENT_QUOTES, 'UTF-8');
 $adminRole = htmlspecialchars($currentAdmin['role_level'] ?? 'Admin', ENT_QUOTES, 'UTF-8');
 $adminAvatar = htmlspecialchars($currentAdmin['avatar_url'] ?? '', ENT_QUOTES, 'UTF-8');
-$logoUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDING_CMkLXHVG82mJL6YH0ge9KUKvHOSD5iP6c7C5L8UKWw63YnPZ2cN9CazMeax6tD3n7VTLaYUfAqVZvEB0N2rzbG-UyGofdGcX629v9EwtIKemWtskuCnxTMjD3VSSR-yVgL7VYQ6QY9Aelfiut_8F5ROJbkrv5xqcN0VMOWCwywDoX7m8MUkGc07Ej9cEPsNZa5n6_zwt8-HDygI2-ULL8qPkLgtyY6YjgC1UQbdOu-tWHLyjAu1lPbdsvYI';
 ?>
 <!DOCTYPE html>
 <html class="dark" lang="fr">
@@ -52,7 +51,7 @@ $logoUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDIN
 
 <nav class="fixed left-0 top-0 h-full w-sidebar-width z-50 flex flex-col bg-background border-r border-outline-variant">
     <div class="h-[72px] w-[72px] flex items-center justify-center bg-black border-b border-outline-variant">
-        <img alt="Omega Symbol" class="w-10 h-10 omega-glow" src="<?= $logoUrl ?>"/>
+        <span class="text-secondary font-bold text-lg font-data-mono omega-glow">Ω</span>
     </div>
     <div class="flex flex-col items-center py-stack-md gap-stack-md flex-grow">
         <button type="button" class="nav-btn flex flex-col items-center gap-1 group w-full py-2 active:scale-95 duration-150" data-view="dashboard">
@@ -70,10 +69,6 @@ $logoUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDIN
         <button type="button" class="nav-btn flex flex-col items-center gap-1 group w-full py-2 active:scale-95 duration-150" data-view="logs">
             <span class="material-symbols-outlined">warning</span>
             <span class="font-label-caps text-[10px] uppercase">Journaux</span>
-        </button>
-        <button type="button" class="nav-btn flex flex-col items-center gap-1 group w-full py-2 active:scale-95 duration-150" data-view="sims">
-            <span class="material-symbols-outlined">science</span>
-            <span class="font-label-caps text-[10px] uppercase">Simul.</span>
         </button>
         <button type="button" class="nav-btn flex flex-col items-center gap-1 group w-full mt-auto py-2 active:scale-95 duration-150" data-view="admin">
             <span class="material-symbols-outlined">settings</span>
@@ -112,26 +107,35 @@ $logoUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDIN
 
         <!-- VIEW: Accueil — vue d'ensemble -->
         <div id="view-dashboard" class="view-section active gap-6">
-            <section class="bg-primary-container/30 border border-outline-variant p-4 rounded-xl flex flex-col gap-2 relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-secondary animate-pulse">info</span>
-                        <h2 class="font-body-md font-semibold text-on-surface">Sujet : Système de surveillance de réseau avec tableau de bord</h2>
-                    </div>
-                    <span class="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-bold rounded-lg border border-green-500/30">ACCEPTÉ</span>
-                </div>
-                <p class="text-on-primary-container text-body-sm leading-relaxed max-w-3xl">
-                    <span class="text-secondary font-bold uppercase text-[10px] mr-1">Objectif Principal :</span>
-                    Permettre à un administrateur de surveiller en temps réel les performances d'un réseau via un tableau de bord simple et interactif.
-                </p>
-                <div class="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-secondary to-transparent opacity-20"></div>
-            </section>
-
             <?php include __DIR__ . '/includes/partials/overview-cards.php'; ?>
 
             <p class="text-on-surface-variant text-body-sm">
-                Utilisez les onglets à gauche pour accéder à la gestion Wi-Fi, la santé du réseau, les journaux, les simulations et l'administration.
+                Utilisez les onglets à gauche pour accéder à la gestion Wi-Fi, la santé du réseau, les journaux et l'administration.
             </p>
+
+            <div id="agent-android-card" class="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary">smartphone</span>
+                        <h4 class="font-body-md font-semibold">Agent Android (hotspot)</h4>
+                    </div>
+                    <span id="agent-status-badge" class="px-2 py-0.5 rounded text-[10px] uppercase bg-outline-variant/30 text-outline">Chargement...</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <span class="text-outline text-[10px] uppercase font-label-caps">Dernier signal</span>
+                        <p id="agent-last-ping" class="font-data-mono text-on-surface mt-1">—</p>
+                    </div>
+                    <div>
+                        <span class="text-outline text-[10px] uppercase font-label-caps">IP agent</span>
+                        <p id="agent-ip" class="font-data-mono text-secondary mt-1">—</p>
+                    </div>
+                    <div>
+                        <span class="text-outline text-[10px] uppercase font-label-caps">Clients détectés</span>
+                        <p id="agent-clients-count" class="font-data-mono text-on-surface mt-1">—</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- VIEW: Wi-Fi — tableau des appareils -->
@@ -181,20 +185,6 @@ $logoUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDIN
         <div id="view-logs" class="view-section gap-6">
             <p class="text-on-surface-variant text-body-sm">Historique chronologique des connexions, alertes et événements réseau.</p>
             <?php include __DIR__ . '/includes/partials/timeline.php'; ?>
-        </div>
-
-        <!-- VIEW: Simulations -->
-        <div id="view-sims" class="view-section gap-6">
-            <p class="text-on-surface-variant text-body-sm">Testez des scénarios réseau simulés (pic de trafic, tentative d'intrusion).</p>
-            <?php include __DIR__ . '/includes/partials/simulation-panel.php'; ?>
-            <div class="bg-surface-container-low border border-outline-variant rounded-xl p-4">
-                <h4 class="font-body-md font-semibold mb-2">Aperçu trafic (temps réel)</h4>
-                <p class="text-on-surface-variant text-sm mb-3">Les simulations mettent à jour les métriques et le journal d'activité.</p>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-data-mono text-on-surface" id="sims-traffic-value">—</span>
-                    <span class="text-sm text-secondary mb-1">Mbps</span>
-                </div>
-            </div>
         </div>
 
         <!-- VIEW: Admin -->

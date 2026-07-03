@@ -40,7 +40,6 @@ if (isAuthenticated()) {
 <body class="bg-background text-on-surface font-[Inter] min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-surface-container-low border border-outline-variant rounded-xl p-8 flex flex-col gap-6">
         <div class="flex flex-col items-center gap-3">
-            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0U9ANrb_Y44ZDING_CMkLXHVG82mJL6YH0ge9KUKvHOSD5iP6c7C5L8UKWw63YnPZ2cN9CazMeax6tD3n7VTLaYUfAqVZvEB0N2rzbG-UyGofdGcX629v9EwtIKemWtskuCnxTMjD3VSSR-yVgL7VYQ6QY9Aelfiut_8F5ROJbkrv5xqcN0VMOWCwywDoX7m8MUkGc07Ej9cEPsNZa5n6_zwt8-HDygI2-ULL8qPkLgtyY6YjgC1UQbdOu-tWHLyjAu1lPbdsvYI" alt="Omega" class="w-14 h-14 omega-glow"/>
             <h1 class="text-xl font-semibold">Monitor_Ω</h1>
             <p class="text-xs text-gray-400 text-center">Système de surveillance de réseau — Administration</p>
         </div>
@@ -63,7 +62,7 @@ if (isAuthenticated()) {
             </button>
         </form>
 
-        <p class="text-[10px] text-center text-gray-500">Démo : admin / admin123</p>
+        <p class="text-[10px] text-center text-gray-500">Démo : jeremie / admin123</p>
     </div>
 
     <script type="module">

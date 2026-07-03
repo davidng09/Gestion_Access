@@ -12,7 +12,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 try {
     $pdo = getConnection();
-    $auth = authenticateAdmin($pdo, 'admin', 'admin123');
+    $auth = authenticateAdmin($pdo, 'jeremie', 'admin123');
     $devices = $pdo->query('SELECT COUNT(*) AS c FROM devices')->fetch();
 
     echo 'auth_ok=' . ($auth ? 'yes' : 'no') . PHP_EOL;

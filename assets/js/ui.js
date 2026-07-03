@@ -77,7 +77,6 @@ const EVENT_TYPE_FR = {
     'Status Reconnected': 'Reconnexion',
     'Status Offline': 'Hors ligne',
     'Security Block': 'Blocage sécurité',
-    'Simulation': 'Simulation',
     'ALERT': 'ALERTE',
     'Nouvelle connexion': 'Nouvelle connexion',
     'Accès bloqué': 'Accès bloqué',
@@ -85,6 +84,8 @@ const EVENT_TYPE_FR = {
     'Reconnexion': 'Reconnexion',
     'Hors ligne': 'Hors ligne',
     'Blocage sécurité': 'Blocage sécurité',
+    'Déblocage': 'Déblocage',
+    'Scan réseau': 'Scan réseau',
     'ALERTE': 'ALERTE',
 };
 

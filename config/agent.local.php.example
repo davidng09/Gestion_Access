@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+// Copier vers config/agent.local.php et personnaliser.
+// Ne jamais committer agent.local.php.
+
+return [
+    'api_key' => 'remplacer-par-une-cle-longue-et-secrete',
+    'hotspot_subnet' => '192.168.43.0/24', // ou '*' pour désactiver le filtre IP
+    'device_stale_seconds' => 30,
+    'rate_limit_seconds' => 1,
+];

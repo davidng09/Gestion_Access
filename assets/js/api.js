@@ -44,24 +44,21 @@ export function blockDevice(id) {
     });
 }
 
+export function unblockDevice(id) {
+    return request(`devices.php?id=${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'unblock' }),
+    });
+}
+
+export function getAgentStatus() {
+    return request('agent.php');
+}
+
 export function getMetrics() {
     return request('metrics.php');
 }
 
 export function getLogs(limit = 50) {
     return request(`logs.php?limit=${limit}`);
-}
-
-export function simulate(type) {
-    return request('simulate.php', {
-        method: 'POST',
-        body: JSON.stringify({ type }),
-    });
-}
-
-export function resetTraffic(value = 850) {
-    return request('simulate.php', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'reset_traffic', value }),
-    });
 }

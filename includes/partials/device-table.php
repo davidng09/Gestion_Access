@@ -16,11 +16,12 @@
                     <th class="px-4 py-3 font-normal">Adresse MAC</th>
                     <th class="px-4 py-3 font-normal">Signal</th>
                     <th class="px-4 py-3 font-normal">Statut</th>
+                    <th class="px-4 py-3 font-normal">Source</th>
                     <th class="px-4 py-3 font-normal text-right">Action</th>
                 </tr>
             </thead>
             <tbody class="text-body-sm divide-y divide-outline-variant device-table-body">
-                <tr><td colspan="7" class="px-4 py-6 text-center text-outline text-sm">Chargement...</td></tr>
+                <tr><td colspan="8" class="px-4 py-6 text-center text-outline text-sm">Chargement...</td></tr>
             </tbody>
         </table>
     </div>

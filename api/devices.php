@@ -19,6 +19,7 @@ try {
             $device['id'] = (int) $device['id'];
             $device['signal_level'] = (int) $device['signal_level'];
             $device['is_online'] = (bool) $device['is_online'];
+            $device['data_source'] = $device['data_source'] ?? 'real';
         }
         unset($device);
 
@@ -39,6 +40,17 @@ try {
                 jsonResponse(['error' => 'Appareil introuvable'], 404);
             }
             jsonResponse(['success' => true, 'device' => $device]);
+        }
+
+        if (($body['action'] ?? '') === 'unblock') {
+            $result = unblockDevice($pdo, $id);
+            if ($result === null) {
+                jsonResponse(['error' => 'Appareil introuvable'], 404);
+            }
+            if (isset($result['error'])) {
+                jsonResponse(['error' => $result['error']], 400);
+            }
+            jsonResponse(['success' => true, 'device' => $result]);
         }
 
         if (array_key_exists('is_online', $body)) {

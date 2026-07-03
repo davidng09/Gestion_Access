@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS devices (
     signal_level TINYINT NOT NULL DEFAULT 4,
     status ENUM('authorized', 'inactive', 'blocked', 'guest') NOT NULL DEFAULT 'authorized',
     is_online TINYINT(1) NOT NULL DEFAULT 1,
+    data_source ENUM('simulated', 'real') NOT NULL DEFAULT 'real',
+    last_seen_at TIMESTAMP NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -57,4 +59,44 @@ CREATE TABLE IF NOT EXISTS traffic_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     value_mbps INT NOT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS observability_sources (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tool_name VARCHAR(50) NOT NULL UNIQUE,
+    role_label VARCHAR(120) NOT NULL,
+    source_status ENUM('online', 'warning', 'offline') NOT NULL DEFAULT 'online',
+    endpoint VARCHAR(255) NOT NULL,
+    scrape_interval_sec INT NOT NULL DEFAULT 15,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS observability_metrics (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source_id INT NOT NULL,
+    metric_key VARCHAR(80) NOT NULL,
+    metric_value VARCHAR(80) NOT NULL,
+    metric_unit VARCHAR(30) NOT NULL DEFAULT '',
+    severity ENUM('info', 'warning', 'error') NOT NULL DEFAULT 'info',
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (source_id) REFERENCES observability_sources(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS phone_actions_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device_id INT NOT NULL,
+    mac_address VARCHAR(17) NOT NULL,
+    action ENUM('block', 'unblock') NOT NULL,
+    status ENUM('pending', 'done', 'failed') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    executed_at TIMESTAMP NULL,
+    error_message VARCHAR(255) NULL,
+    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS agent_heartbeats (
+    agent_id VARCHAR(50) PRIMARY KEY,
+    last_ping TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45) NOT NULL,
+    clients_count INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
